@@ -135,6 +135,63 @@ class App extends React.Component {
     });
   }
 
+  tryandpack3 = (event) => {
+    console.log("inside try and pack2");
+    var i = 0;
+    var countArray = []
+    while (i<this.state.sbox.length)
+    {
+      if (this.state.sbox[i]['count'])
+      {
+        countArray.push(parseInt(this.state.sbox[i]['count']))
+      }
+      else
+      {
+        countArray.push(0)
+      }
+      i++;
+    }
+    console.log("Data being sent: ",{countArray})
+    var axios = require('axios');
+    var data = {countArray};
+
+    var config = {
+      method: 'post',
+      url: 'http://127.0.0.1:5001/pack',
+      headers: { 
+        'Content-Type': 'text/plain'
+      },
+      data : data
+    };
+
+    axios(config)
+    .then(function (response) {
+      console.log("resp: ",JSON.stringify(response.data));
+      return response.data
+    })
+    .then((data)=>{
+      console.log("Data received: ", data);
+      i =0;
+      var bbox = this.state.bbox;
+      while (i<17)
+      {
+        bbox[i]['eff2']=String(data[bbox[i]['BoxCode']])
+        // bbox[i]['volu']=String(data[i][1])
+        i+=1;
+      }
+      // setBbox([])
+      return bbox
+
+    })
+    .then((bb)=>{
+      console.log("final bbox: ",bb);
+      this.setState({bbox:bb})
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+  }
+
   changeHandler = (event) => {
     var bbox = require('./bbox.json');
     console.log("bbox: ", bbox)
@@ -153,7 +210,7 @@ class App extends React.Component {
           display: "grid",
           // margin: "10px",
           padding: "10px",
-          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr 1fr 1fr",
           gridGap: "10px",
           // gridColumnGap: "10px", 
           // columnGap: "10px",
@@ -166,6 +223,7 @@ class App extends React.Component {
           <button width="100%" onClick={this.changeHandler}>Load Boxes</button>
           <button width="100%" onClick={this.tryandpack}>Try and pack<br/>ft. Brute Force</button>
           <button width="100%" onClick={this.tryandpack2}>Try and pack<br/>Pure LAFF</button>
+          <button width="100%" onClick={this.tryandpack3}>Try and pack<br/>Pure 3dBPP</button>
         </div>
         <div width="100%" display="flex" style={{
           display: "grid",
@@ -227,7 +285,7 @@ class App extends React.Component {
             overflow: "auto",
           }}>
             <div key={`${index}_3`}><p>{box['BoxCode']} ({box['W']} , {box['D']} , {box['H']}) : </p></div>
-            <div key={`${index}_4`}><p><b><u>{box['eff']}</u></b>  |  <b><u>{box['volu']}</u></b></p></div>
+            <div key={`${index}_4`}><p><b><u>{box['eff']}</u></b>  ({box['volu']})  |  <b><u>{box['eff2']}</u></b></p></div>
           </div>
         )
       })}
