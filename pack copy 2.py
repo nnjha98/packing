@@ -276,46 +276,19 @@ def laffPack2(setOfBoxes, containerBox): #return possible, vol utilized, levelAr
         # place that box in this level, remove it from setOfBoxes
         lfpBox = setOfBoxes.pop(lfpi)
         heightInCurrentIndex = lfpBox.h
-        m = 0
-        currentLevel_1 = {'level':Level(currentIndexHeight, currentIndex), 'vol': 0}
-        currentLevel_2 = {'level':Level(currentIndexHeight, currentIndex), 'vol': 0}
-        thisLevelSetOfBoxes = []
-        for b in setOfBoxes:
-            thisLevelSetOfBoxes.append(Box(b.w,b.d,b.h))
-        temparray = []
-        temparray.append(currentLevel_1)
-        temparray.append(currentLevel_2)
+        currentLevel = Level(currentIndexHeight, currentIndex)
         currentIndex += 1
         currentIndexHeight += heightInCurrentIndex
-        temparray[0]['level'].boxesInLevel.append(BoxesInLevel(lfpBox, 0 , 0))
+        currentLevel.boxesInLevel.append(BoxesInLevel(lfpBox, 0 , 0))
         emptySpaceArray = []
         currentBoxBeingAdded = Space(0,lfpBox.w,0,lfpBox.d)
         emptySpaceArray.append(Space(0,containerBox.w,0,containerBox.d))
-        setOfBoxesIfFirstIsChosen = []
         while True:
         # pass
         # fill remaining space:
             # update the array of available space
             if (len(setOfBoxes)==0):
-                if (m==0):
-                    # pass
-                    # goto restart level packing and rotate and fit
-                    m = m + 1
-                    emptySpaceArray = []
-                    emptySpaceArray.append(Space(0,containerBox.w,0,containerBox.d))
-                    currentBoxBeingAdded = Space(0,lfpBox.d,0,lfpBox.w)
-                    lfpBox.rotate2D()
-                    setOfBoxesIfFirstIsChosen = setOfBoxes
-                    if (lfpBox.w > containerBox.w or lfpBox.d > containerBox.d):
-                        levelArray.append(temparray[0]['level'])
-                        break
-                    setOfBoxes = thisLevelSetOfBoxes
-                elif (m==1):
-                    if (temparray[0]['vol']>temparray[1]['vol']):
-                        levelArray.append(temparray[0]['level'])
-                        setOfBoxes = setOfBoxesIfFirstIsChosen
-                    else:
-                        levelArray.append(temparray[1]['level'])
+                levelArray.append(currentLevel)
                 break 
             j = 0
             newEmptySpaceArray = []
@@ -330,26 +303,8 @@ def laffPack2(setOfBoxes, containerBox): #return possible, vol utilized, levelAr
                 j += 1
             emptySpaceArray = newEmptySpaceArray
             if (len(emptySpaceArray)==0):
-                if (m==0):
-                    # pass
-                    # goto restart level packing and rotate and fit
-                    m = m + 1
-                    emptySpaceArray = []
-                    emptySpaceArray.append(Space(0,containerBox.w,0,containerBox.d))
-                    currentBoxBeingAdded = Space(0,lfpBox.d,0,lfpBox.w)
-                    lfpBox.rotate2D()
-                    setOfBoxesIfFirstIsChosen = setOfBoxes
-                    if (lfpBox.w > containerBox.w or lfpBox.d > containerBox.d):
-                        levelArray.append(temparray[0])
-                        break
-                    setOfBoxes = thisLevelSetOfBoxes
-                elif (m==1):
-                    if (temparray[0]['vol']>temparray[1]['vol']):
-                        levelArray.append(temparray[0]['level'])
-                        setOfBoxes = setOfBoxesIfFirstIsChosen
-                    else:
-                        levelArray.append(temparray[1]['level'])
-                break  
+                levelArray.append(currentLevel)
+                break 
             # select max volume box which will fit
             setOfBoxes.sort(reverse=True,key=volReturner)
             foundSomeBoxWhichFits = False
@@ -369,9 +324,7 @@ def laffPack2(setOfBoxes, containerBox): #return possible, vol utilized, levelAr
                         if (rot2d == 1):
                             currBox.rotate2D()
                         currentBoxBeingAdded = Space(x,x+currBox.w,y,y+currBox.d)
-                        # currentLevel.boxesInLevel.append(BoxesInLevel(currBox, x , y))
-                        temparray[m]['level'].boxesInLevel.append(BoxesInLevel(currBox, x , y))
-                        temparray[m]['vol'] = temparray[m]['vol'] + currBox.vol
+                        currentLevel.boxesInLevel.append(BoxesInLevel(currBox, x , y))
                         break
                     l += 1
                 if (foundSomeBoxWhichFits == True):
@@ -379,25 +332,7 @@ def laffPack2(setOfBoxes, containerBox): #return possible, vol utilized, levelAr
                 k += 1
             # if no box is able to fit in any of the space, exit fill remaining space
             if (foundSomeBoxWhichFits == False):
-                if (m==0):
-                    # pass
-                    # goto restart level packing and rotate and fit
-                    m = m + 1
-                    emptySpaceArray = []
-                    emptySpaceArray.append(Space(0,containerBox.w,0,containerBox.d))
-                    currentBoxBeingAdded = Space(0,lfpBox.d,0,lfpBox.w)
-                    lfpBox.rotate2D()
-                    setOfBoxesIfFirstIsChosen = setOfBoxes
-                    if (lfpBox.w > containerBox.w or lfpBox.d > containerBox.d):
-                        levelArray.append(temparray[0])
-                        break
-                    setOfBoxes = thisLevelSetOfBoxes
-                elif (m==1):
-                    if (temparray[0]['vol']>temparray[1]['vol']):
-                        levelArray.append(temparray[0])
-                        setOfBoxes = setOfBoxesIfFirstIsChosen
-                    else:
-                        levelArray.append(temparray[1])
+                levelArray.append(currentLevel)
                 break 
 
         # increment a level
@@ -436,9 +371,6 @@ def laffPack(setOfBoxes, containerBox): #return possible, vol utilized, levelArr
             setOfBoxes[lfpi].rotate2D()
             if (setOfBoxes[lfpi].w>containerBox.w or setOfBoxes[lfpi].d>containerBox.d):
                 return False, None, None
-        
-
-
         # place that box in this level, remove it from setOfBoxes
         lfpBox = setOfBoxes.pop(lfpi)
         heightInCurrentIndex = lfpBox.h
