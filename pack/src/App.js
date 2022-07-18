@@ -4,12 +4,133 @@ import Papa from "papaparse";
 import $ from 'jquery'; 
 import React, { PureComponent } from 'react';
 
+import { useRef } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, Stars } from '@react-three/drei'
+
+import Modal from 'react-modal';
+import * as THREE from 'three'
 
 class App extends React.Component {
 
+
+  Box = (props) => {
+    // This reference gives us direct access to the THREE.Mesh object
+    console.log("new box with: ", {props})
+    const ref = useRef()
+    // Hold state for hovered and clicked events
+    const [hovered, hover] = useState(false)
+    const [clicked, click] = useState(false)
+    // Subscribe this component to the render-loop, rotate the mesh every frame
+    useFrame((state, delta) => (ref.current.rotation.x += 0.0))
+    // Return the view, these are regular Threejs elements expressed in JSX
+    return (
+      <mesh
+        {...props}
+        ref={ref}
+        scale={clicked ? 1 : 1}
+        onClick={(event) => click(!clicked)}
+        onPointerOver={(event) => hover(true)}
+        onPointerOut={(event) => hover(false)}>
+        <boxGeometry args={props.size} />
+        <meshStandardMaterial color={props.color} opacity={1} transparent />
+      </mesh>
+    )
+  }
+
+  BoxC = (props) => {
+    // This reference gives us direct access to the THREE.Mesh object
+    console.log("new box with: ", {props})
+    const ref = useRef()
+    // Hold state for hovered and clicked events
+    const [hovered, hover] = useState(false)
+    const [clicked, click] = useState(false)
+    // Subscribe this component to the render-loop, rotate the mesh every frame
+    useFrame((state, delta) => (ref.current.rotation.x += 0.0))
+    // Return the view, these are regular Threejs elements expressed in JSX
+    return (
+      <mesh
+        {...props}
+        ref={ref}
+        scale={clicked ? 1 : 1}
+        onClick={(event) => click(!clicked)}
+        onPointerOver={(event) => hover(true)}
+        onPointerOut={(event) => hover(false)}>
+        <boxGeometry args={props.size} />
+        <meshStandardMaterial color={props.color} opacity={0.5} transparent />
+      </mesh>
+    )
+  }
+  
+  Canva = (props) => {
+    console.log("Canva props: ",this.state.currentPlacement)
+    // this.state.currentPlacement.forEach(e => {
+    //   // console.log(e['pos']," ",e['size'])
+    //   var i = 0;
+    //   while (i<3)
+    //   {
+    //     console.log("old: ", e['pos'][i])
+    //     e['pos'][i]+=e['size'][i]/2
+    //     console.log("new: ", e['pos'][i])
+    //     i++;
+    //   }
+    // })
+    var colorArray = ['lime','maroon','midnightblue','orangered','seagreen','violet','aqua','crimson','greenyellow','fuchsia']
+    const [array, setarray] = useState(this.state.currentPlacement)
+    const positions = new Float32Array(
+      [0,0,0, 
+        0,40,0,
+        0,80,0,
+        152.4,80,0]);
+  const colors = new Float32Array(
+    [1,0.5,0.5,
+      1,0.5,0.5,
+      1,0.5,0.5,
+      1,0.5,0.5]);
+    return (
+      <Canvas camera={{ fov: 75, position: [0, 0, 200]}}>
+        <OrbitControls />
+        {/* <Stars/> */}
+        <ambientLight intensity={0.3} />
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
+        <pointLight position={[-10, -10, -10]} />
+        <this.BoxC visible={this.state.containerVisible} position={this.state.containerpos} size={this.state.containersize} color={'yellowgreen'} opacity={0.1}/>
+        {/* <this.Box position={[0+100, 0+20, 0+62.5]} size={[200, 40, 125]} />
+        <this.Box position={[0+100, 40+20, 0+62.5]} size={[200, 40, 125]} />
+        <this.Box position={[0+76.2, 80+34.3, 0+66.7]} size={[152.4, 68.6, 133.4]} />
+        <this.Box position={[152.4+76.2, 80+34.3, 0+66.7]} size={[152.4, 68.6, 133.4]} /> */}
+        {array.map((element, index) =>
+          <this.Box position={element['pos']} size={element['size']} color={colorArray[index%10]} opacity={0.8}/>
+        )}
+        <points>
+        <bufferGeometry attach="geometry">
+          <bufferAttribute
+              attach="attributes-position"
+              count={positions.length / 3}
+              array={positions}
+              itemSize={3}
+              usage={THREE.DynamicDrawUsage}
+            />
+            <bufferAttribute
+              attach="attributes-color"
+              count={colors.length / 3}
+              array={colors}
+              itemSize={3}
+              usage={THREE.DynamicDrawUsage}
+            />
+        </bufferGeometry>
+        <pointsMaterial attach="material" vertexColors size={10} sizeAttenuation={false} />
+      </points>
+      </Canvas>
+    )
+  }
+
   state={
     sbox: [],
-    bbox: []
+    bbox: [],
+    open: false,
+    currentPlacement: [],
+    containerVisible: true
   }
 
   constructor(props)
@@ -17,7 +138,10 @@ class App extends React.Component {
       super(props);
       this.setState({
         sbox: [],
-        bbox: []
+        bbox: [],
+        open: false,
+        currentPlacement: [],
+        containerVisible: true
       })
   }
 
@@ -120,6 +244,15 @@ class App extends React.Component {
       {
         bbox[i]['eff']=String(data[i][0])
         bbox[i]['volu']=String(data[i][1])
+        if (parseFloat(data[i][0]) > 0)
+        {
+          bbox[i]['present']=true
+          bbox[i]['placement'] = data[i][2]
+        }
+        else
+        {
+          bbox[i]['present']=false
+        }
         i+=1;
       }
       // setBbox([])
@@ -202,6 +335,16 @@ class App extends React.Component {
     // console.log("sbox: ", sbox)
   };
   
+  effclick = (event,index) => {
+    console.log("inside eff click")
+    console.log({event, index})
+    this.setState({open: true})
+    console.log("placement: ", this.state.bbox[parseInt(index)]['placement'])
+    // currentPlacement: []
+    this.setState({currentPlacement: this.state.bbox[parseInt(index)]['placement']})
+    this.setState({containersize: [parseFloat(this.state.bbox[parseInt(index)]['W']),parseFloat(this.state.bbox[parseInt(index)]['H']),parseFloat(this.state.bbox[parseInt(index)]['D'])]})
+    this.setState({containerpos: [parseFloat(this.state.bbox[parseInt(index)]['W'])/2.0,parseFloat(this.state.bbox[parseInt(index)]['H'])/2.0,parseFloat(this.state.bbox[parseInt(index)]['D'])/2.0]})
+  }
 
   render() { 
     return (
@@ -284,14 +427,18 @@ class App extends React.Component {
             // filter: "blur(0px)",
             overflow: "auto",
           }}>
-            <div key={`${index}_3`}><p>{box['BoxCode']} ({box['W']} , {box['D']} , {box['H']}) : </p></div>
+            <div key={`${index}_3`}><p>{box['BoxCode']} ({box['W']} , {box['D']} , {box['H']}) : </p><button onClick={event=>this.effclick(event,index)}>3D</button></div>
             <div key={`${index}_4`}><p><b><u>{box['eff']}</u></b>  ({box['volu']})  |  <b><u>{box['eff2']}</u></b></p></div>
           </div>
         )
       })}
     </div>
     </div>
-      
+      <Modal isOpen={this.state.open}>
+        <button onClick={()=>{this.setState({open:false})}}>Close this</button>
+        <button onClick={()=>{this.setState({containerVisible:!this.state.containerVisible})}}>Toggle container</button>
+        <this.Canva></this.Canva>
+      </Modal>
     </div>
     );
   }
